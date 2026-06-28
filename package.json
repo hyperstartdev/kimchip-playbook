@@ -1,0 +1,7 @@
+{
+  "name": "kimchip-playbook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KIMCHIP US 런칭 전략 & 성과 대시보드 (Meta/Amazon 실시간 연동)",
+  "engines": { "node": ">=18" }
+}

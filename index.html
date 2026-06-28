@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>KIMCHIP Playbook</title>
+<meta name="description" content="KIMCHIP US 런칭 전략 & 성과 대시보드" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#15171c; --muted:#6b7280; --line:#e7e9ee;
+    --brand:#e0392b; --brand-soft:#fdecea; --brand-ink:#b4271b;
+    --green:#16a34a; --green-soft:#e7f6ed; --red:#dc2626; --red-soft:#fdeaea;
+    --blue:#2563eb; --amber:#d97706; --violet:#7c3aed;
+    --sidebar:#14161c; --sidebar-ink:#c7ccd6; --sidebar-active:#1f2230; --sidebar-muted:#7b8294;
+    --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none!important}
+
+  /* ---------- LOGIN ---------- */
+  #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 600px at 30% -10%,#fde3df 0%,transparent 55%),var(--bg);padding:24px}
+  .login-card{width:380px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    box-shadow:0 10px 40px rgba(16,24,40,.10);padding:34px 30px}
+  .brand-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .logo-badge{width:34px;height:34px;border-radius:9px;background:var(--brand);color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:16px;letter-spacing:-.5px}
+  .brand-name{font-weight:800;font-size:18px;letter-spacing:-.3px}
+  .brand-x{color:var(--muted);font-weight:600}
+  .login-card h1{font-size:20px;margin:18px 0 4px}
+  .login-card p.sub{color:var(--muted);margin:0 0 22px;font-size:13px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px}
+  .field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;outline:none;background:#fbfbfc}
+  .field input:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-soft)}
+  .btn{width:100%;padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:14px;transition:.15s}
+  .btn:hover{background:var(--brand-ink)}
+  .login-hint{margin-top:16px;font-size:12px;color:var(--muted);text-align:center}
+
+  /* ---------- APP SHELL ---------- */
+  #app{display:none;min-height:100%}
+  .layout{display:flex;min-height:100vh}
+  .sidebar{width:248px;flex:0 0 248px;background:var(--sidebar);color:var(--sidebar-ink);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:8px}.sidebar::-webkit-scrollbar-thumb{background:#2a2e3a;border-radius:8px}
+  .side-head{padding:18px 18px 12px;display:flex;align-items:center;gap:10px}
+  .side-head .logo-badge{width:30px;height:30px;font-size:14px}
+  .side-head .t{font-weight:800;color:#fff;font-size:15px;line-height:1.1}
+  .side-head .t small{display:block;color:var(--sidebar-muted);font-weight:600;font-size:11px;margin-top:2px}
+  .nav-group{padding:6px 10px}
+  .nav-group .label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--sidebar-muted);
+    padding:10px 10px 6px;font-weight:700}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:var(--sidebar-ink);
+    font-size:13.5px;font-weight:500;margin:1px 0}
+  .nav-item:hover{background:#1b1e28;color:#fff}
+  .nav-item.active{background:var(--sidebar-active);color:#fff;font-weight:600}
+  .nav-item .ic{width:18px;text-align:center;opacity:.85;font-size:14px}
+  .nav-item.active .ic{opacity:1}
+  .side-foot{margin-top:auto;padding:14px;border-top:1px solid #23262f;display:flex;align-items:center;gap:10px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:#3a3f4d;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .side-foot .who{font-size:13px;color:#fff;font-weight:600}
+  .side-foot .role{font-size:11px;color:var(--sidebar-muted)}
+  .logout{margin-left:auto;color:var(--sidebar-muted);font-size:12px;background:none;border:none}
+  .logout:hover{color:#fff}
+
+  /* ---------- MAIN ---------- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:60px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.85);backdrop-filter:blur(6px);
+    display:flex;align-items:center;gap:14px;padding:0 26px;position:sticky;top:0;z-index:5}
+  .topbar h2{font-size:16px;margin:0;font-weight:700}
+  .crumb{color:var(--muted);font-size:13px}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .pill{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+  .pill.muted{background:#eef0f3;color:#4b5563}
+  .content{padding:24px 26px 60px;max-width:1240px;width:100%}
+
+  .page-head{margin-bottom:18px}
+  .page-head h1{font-size:22px;margin:0 0 4px;letter-spacing:-.3px}
+  .page-head p{margin:0;color:var(--muted);font-size:13.5px}
+
+  /* cards & grids */
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .cols-2{grid-template-columns:2fr 1fr}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}.cols-2,.cols-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .card h3{margin:0 0 2px;font-size:14px}
+  .card .csub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .kpi .k-label{color:var(--muted);font-size:12.5px;font-weight:600}
+  .kpi .k-val{font-size:26px;font-weight:800;letter-spacing:-.5px;margin:8px 0 4px}
+  .delta{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px}
+  .delta.up{color:var(--green);background:var(--green-soft)}
+  .delta.down{color:var(--red);background:var(--red-soft)}
+  .chart-wrap{position:relative;height:280px}
+  .chart-sm{height:220px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+  .tag.g{background:var(--green-soft);color:var(--green)}
+  .tag.r{background:var(--red-soft);color:var(--red)}
+  .tag.b{background:#e8f0fe;color:var(--blue)}
+  .tag.a{background:#fef3e2;color:var(--amber)}
+  .tag.v{background:#f1e9fd;color:var(--violet)}
+
+  .list-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .list-row:last-child{border-bottom:none}
+  .bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;flex:1}
+  .bar>span{display:block;height:100%;border-radius:6px;background:var(--brand)}
+
+  .doc h4{font-size:14px;margin:18px 0 6px}
+  .doc p{color:#374151;margin:0 0 10px}
+  .doc ul{margin:0 0 12px;padding-left:18px;color:#374151}
+  .doc li{margin:4px 0}
+  .callout{border-left:3px solid var(--brand);background:var(--brand-soft);padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0;color:#7a1d14}
+  .step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step .n{flex:0 0 26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{font-size:12px;padding:5px 11px;border-radius:999px;background:#eef0f3;color:#374151;font-weight:600}
+  .media{aspect-ratio:9/16;border-radius:12px;background:linear-gradient(135deg,#2b2f3a,#454b5c);position:relative;overflow:hidden;display:flex;align-items:flex-end;color:#fff}
+  .media .meta{padding:10px;font-size:12px;width:100%;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+  .media .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.85}
+  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1080px){.gallery{grid-template-columns:repeat(2,1fr)}}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin:6px 0 12px}
+  .section-title h2{font-size:16px;margin:0}
+  .btn-sm{padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:12.5px}
+  .btn-sm.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .input-line{display:flex;gap:8px;margin-bottom:14px}
+  .input-line input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;outline:none}
+  .input-line input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .score{font-size:40px;font-weight:800;letter-spacing:-1px}
+  .check{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .check:last-child{border-bottom:none}
+  .check .mk{flex:0 0 20px;font-weight:800}
+  .ok{color:var(--green)}.no{color:var(--red)}.warn{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <form class="login-card" onsubmit="doLogin(event)">
+    <div class="brand-row">
+      <div class="logo-badge">K</div>
+      <div class="brand-name">KIMCHIP <span class="brand-x">× HEEDA</span></div>
+    </div>
+    <h1>Playbook 로그인</h1>
+    <p class="sub">KIMCHIP US 런칭 전략 &amp; 성과 대시보드</p>
+    <div class="field">
+      <label>이메일</label>
+      <input type="email" id="email" placeholder="you@kimchip.com" value="winter.a@kimchip.com" required />
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <input type="password" id="pw" placeholder="••••••••" value="demo1234" required />
+    </div>
+    <button class="btn" type="submit">로그인</button>
+    <div class="login-hint">데모 버전 · 아무 값이나 입력하면 로그인됩니다</div>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-head">
+        <div class="logo-badge">K</div>
+        <div class="t">KIMCHIP<small>Playbook · HEEDA</small></div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="side-foot">
+        <div class="avatar">W</div>
+        <div>
+          <div class="who">winter.a</div>
+          <div class="role">agent</div>
+        </div>
+        <button class="logout" onclick="logout()">로그아웃</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h2 id="topTitle">대시보드</h2>
+        <span class="crumb" id="topCrumb">자사 브랜드</span>
+        <div class="top-right">
+          <span class="pill" id="rangePill">최근 30일</span>
+          <span class="pill muted">USD</span>
+        </div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- NAV CONFIG ---------------- */
+const NAV = [
+  {group:"자사 브랜드", items:[
+    {id:"dashboard", ic:"▦", name:"대시보드"},
+    {id:"amazon", ic:"🅰", name:"Amazon"},
+    {id:"sp-ads", ic:"◈", name:"SP 광고"},
+    {id:"sd-ads", ic:"◇", name:"SD 광고"},
+    {id:"tiktok-ads", ic:"♪", name:"TikTok Ads"},
+    {id:"meta-ads", ic:"ⓕ", name:"Meta Ads"},
+    {id:"tiktok-utm", ic:"⛓", name:"TikTok UTM"},
+    {id:"creatives", ic:"🎬", name:"광고 소재"},
+    {id:"competitors", ic:"⚔", name:"경쟁사"},
+    {id:"lmf", ic:"◎", name:"LMF"},
+    {id:"outreach", ic:"✉", name:"아웃리치"},
+    {id:"reel-checker", ic:"✔", name:"릴스 체커"},
+    {id:"signal-planner", ic:"📡", name:"시그널플래너"},
+    {id:"playbook", ic:"📘", name:"전략 가이드"},
+    {id:"sop", ic:"📋", name:"SOP"},
+    {id:"learnings", ic:"🧠", name:"학습 기록"},
+    {id:"amazon-guide", ic:"📕", name:"광고 가이드"},
+  ]},
+  {group:"대행 클라이언트", items:[
+    {id:"clients", ic:"🦆", name:"cosduck"},
+  ]},
+];
+const TITLES = {};
+NAV.forEach(g=>g.items.forEach(i=>TITLES[i.id]={name:i.name,group:g.group}));
+
+/* ---------------- AUTH ---------------- */
+function doLogin(e){e.preventDefault();document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').style.display='block';if(!location.hash)location.hash='#/dashboard';route();}
+function logout(){document.getElementById('app').style.display='none';
+  document.getElementById('login').classList.remove('hidden');}
+
+/* ---------------- NAV RENDER ---------------- */
+function buildNav(){
+  const nav=document.getElementById('nav');
+  nav.innerHTML=NAV.map(g=>`
+    <div class="nav-group">
+      <div class="label">${g.group}</div>
+      ${g.items.map(i=>`<a class="nav-item" data-id="${i.id}" href="#/${i.id}">
+         <span class="ic">${i.ic}</span><span>${i.name}</span></a>`).join("")}
+    </div>`).join("");
+}
+
+/* ---------------- HELPERS ---------------- */
+const fmt=n=>n.toLocaleString('en-US');
+const usd=n=>'$'+n.toLocaleString('en-US');
+function kpi(label,val,delta,up){return `<div class="card kpi">
+  <div class="k-label">${label}</div>
+  <div class="k-val">${val}</div>
+  <span class="delta ${up?'up':'down'}">${up?'▲':'▼'} ${delta}</span>
+  <span class="k-label" style="margin-left:6px">전월 대비</span></div>`;}
+let charts=[];
+function clearCharts(){charts.forEach(c=>c.destroy());charts=[];}
+const GRID={color:'#eef0f3'},TICK={color:'#9aa1ad',font:{size:11}};
+function lineCfg(labels,datasets){return {type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:datasets.length>1,labels:{usePointStyle:true,boxWidth:8,font:{size:12}}}},
+  scales:{x:{grid:{display:false},ticks:TICK},y:{grid:GRID,ticks:TICK,beginAtZero:true}},
+  elements:{line:{tension:.35,borderWidth:2},point:{radius:0,hoverRadius:4}}}};}
+function barCfg(labels,datasets){return {type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:datasets.length>1,labels:{usePointStyle:true,boxWidth:8,font:{size:12}}}},
+  scales:{x:{grid:{display:false},ticks:TICK},y:{grid:GRID,ticks:TICK,beginAtZero:true}},
+  borderRadius:6,maxBarThickness:34}};}
+function doughCfg(labels,data,colors){return {type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{position:'right',labels:{usePointStyle:true,boxWidth:8,font:{size:12}}}}}};}
+const days=Array.from({length:14},(_,i)=>`6/${15+i}`);
+const months=['1월','2월','3월','4월','5월','6월'];
+const rnd=(a,b)=>Math.round(a+Math.random()*(b-a));
+const series=(a,b,n=14)=>Array.from({length:n},()=>rnd(a,b));
+
+/* 실시간 연동 헬퍼: /api/* 호출, 실패/데모 시 null 처리는 호출부에서 */
+async function liveFetch(path){
+  try{const r=await fetch(path,{cache:'no-store'});if(!r.ok)return null;return await r.json();}
+  catch(e){return null;}
+}
+function liveBadge(data){
+  if(!data) return '<span class="tag a">오프라인</span>';
+  if(data.demo) return '<span class="tag a">데모 데이터</span>';
+  return '<span class="tag g">● 실시간 연동</span>';
+}
+
+/* ---------------- PAGES ---------------- */
+const PAGES={};
+
+PAGES.dashboard=()=>{
+  return {html:`
+    <div class="page-head"><h1>대시보드</h1><p>KIMCHIP US 런칭 전체 성과 요약 · 최근 30일</p></div>
+    <div class="grid kpis" style="margin-bottom:16px">
+      ${kpi('총 매출','$184,920','12.4%',true)}
+      ${kpi('광고비 (Spend)','$52,310','3.1%',false)}
+      ${kpi('블렌디드 ROAS','3.54x','8.2%',true)}
+      ${kpi('전환수','2,418','15.7%',true)}
+    </div>
+    <div class="grid cols-2" style="margin-bottom:16px">
+      <div class="card"><h3>매출 & 광고비 추이</h3><div class="csub">일별 · 최근 14일</div>
+        <div class="chart-wrap"><canvas id="c-rev"></canvas></div></div>
+      <div class="card"><h3>채널 매출 비중</h3><div class="csub">Amazon vs TikTok vs DTC</div>
+        <div class="chart-wrap"><canvas id="c-mix"></canvas></div></div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>채널별 성과</h3><div class="csub">최근 30일</div>
+        <table><thead><tr><th>채널</th><th class="num">매출</th><th class="num">광고비</th><th class="num">ROAS</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td>Amazon SP</td><td class="num">$72,400</td><td class="num">$21,100</td><td class="num">3.43x</td><td><span class="tag g">양호</span></td></tr>
+          <tr><td>Amazon SD</td><td class="num">$28,900</td><td class="num">$9,800</td><td class="num">2.95x</td><td><span class="tag a">개선필요</span></td></tr>
+          <tr><td>TikTok Ads</td><td class="num">$54,200</td><td class="num">$17,300</td><td class="num">3.13x</td><td><span class="tag g">양호</span></td></tr>
+          <tr><td>DTC / Organic</td><td class="num">$29,420</td><td class="num">$4,110</td><td class="num">7.16x</td><td><span class="tag b">우수</span></td></tr>
+        </tbody></table></div>
+      <div class="card"><h3>오늘의 알림</h3><div class="csub">자동 시그널</div>
+        <div class="list-row"><span class="tag r">긴급</span><span>SP 캠페인 "Kimchi Snack" ACOS 42%로 상승</span></div>
+        <div class="list-row"><span class="tag a">주의</span><span>TikTok CR-0142 소재 CTR 1.2%로 하락</span></div>
+        <div class="list-row"><span class="tag g">기회</span><span>"vegan kimchi" 키워드 검색량 +38%</span></div>
+        <div class="list-row"><span class="tag b">정보</span><span>경쟁사 Mother In Law 신제품 런칭 감지</span></div>
+        <div class="list-row"><span class="tag v">할일</span><span>주간 인플루언서 아웃리치 12건 대기</span></div>
+      </div>
+    </div>`,
+    init(){
+      charts.push(new Chart(document.getElementById('c-rev'),lineCfg(days,[
+        {label:'매출',data:series(4000,9000),borderColor:'#e0392b',backgroundColor:'rgba(224,57,43,.08)',fill:true},
+        {label:'광고비',data:series(1200,2600),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.06)',fill:true}])));
+      charts.push(new Chart(document.getElementById('c-mix'),doughCfg(['Amazon','TikTok','DTC'],[101300,54200,29420],['#e0392b','#111827','#d97706'])));
+    }};
+};
+
+PAGES.amazon=()=>({html:`
+  <div class="page-head"><h1>Amazon <span id="amzn-badge" class="tag a" style="vertical-align:middle">불러오는 중…</span></h1><p>아마존 셀러 센트럴 통합 성과</p></div>
+  <div class="grid kpis" style="margin-bottom:16px" id="amzn-kpis">
+    ${kpi('Ordered Product Sales','$101,300','9.8%',true)}
+    ${kpi('TACOS','17.6%','1.4%',true)}
+    ${kpi('ACOS','30.5%','2.1%',true)}
+    ${kpi('ROAS','3.28x','0.8%',true)}
+  </div>
+  <div class="grid cols-2" style="margin-bottom:16px">
+    <div class="card"><h3>매출 vs 광고비 (TACOS)</h3><div class="csub">주간</div>
+      <div class="chart-wrap"><canvas id="c-az"></canvas></div></div>
+    <div class="card"><h3>Buy Box & 재고</h3><div class="csub">현재</div>
+      <div class="list-row"><span style="flex:0 0 140px">Buy Box 점유율</span><div class="bar"><span style="width:94%"></span></div><b>94%</b></div>
+      <div class="list-row"><span style="flex:0 0 140px">재고 커버리지</span><div class="bar"><span style="width:61%;background:#d97706"></span></div><b>27일</b></div>
+      <div class="list-row"><span style="flex:0 0 140px">리뷰 평점</span><div class="bar"><span style="width:88%;background:#16a34a"></span></div><b>4.4★</b></div>
+      <div class="list-row"><span style="flex:0 0 140px">IPI 점수</span><div class="bar"><span style="width:74%"></span></div><b>540</b></div>
+    </div>
+  </div>
+  <div class="card"><h3>SKU별 성과</h3><div class="csub">Top 5</div>
+    <table><thead><tr><th>SKU</th><th>상품명</th><th class="num">매출</th><th class="num">유닛</th><th class="num">ACOS</th><th>상태</th></tr></thead><tbody>
+      <tr><td>KMC-001</td><td>Original Kimchi 16oz</td><td class="num">$41,200</td><td class="num">3,120</td><td class="num">14.2%</td><td><span class="tag g">베스트셀러</span></td></tr>
+      <tr><td>KMC-002</td><td>Vegan Kimchi 16oz</td><td class="num">$26,800</td><td class="num">1,980</td><td class="num">19.8%</td><td><span class="tag a">성장중</span></td></tr>
+      <tr><td>KMC-003</td><td>Kimchi Snack Pack</td><td class="num">$18,400</td><td class="num">2,440</td><td class="num">31.5%</td><td><span class="tag r">ACOS 높음</span></td></tr>
+      <tr><td>KMC-004</td><td>Gochujang Paste</td><td class="num">$9,900</td><td class="num">760</td><td class="num">16.1%</td><td><span class="tag b">안정</span></td></tr>
+      <tr><td>KMC-005</td><td>Kimchi Variety Bundle</td><td class="num">$5,000</td><td class="num">410</td><td class="num">22.0%</td><td><span class="tag a">신규</span></td></tr>
+    </tbody></table></div>`,
+  async init(){
+    const d=await liveFetch('/api/amazon');
+    const badge=document.getElementById('amzn-badge');if(badge)badge.outerHTML=liveBadge(d);
+    const data=d||{demo:true};
+    if(data.summary){const s=data.summary;
+      document.getElementById('amzn-kpis').innerHTML=
+        kpi('Ordered Product Sales','$'+fmt(s.sales),'',true)+kpi('TACOS',s.tacos+'%','',true)+
+        kpi('ACOS',s.acos+'%','',true)+kpi('ROAS',s.roas+'x','',true);}
+    const mon=(data.monthly&&data.monthly.map(x=>x.m))||months;
+    const sales=(data.monthly&&data.monthly.map(x=>x.sales))||[12,14,15,17,16,18].map(x=>x*1000);
+    const spend=(data.monthly&&data.monthly.map(x=>x.spend))||[2.4,2.8,2.9,3.1,3.0,3.2].map(x=>x*1000);
+    charts.push(new Chart(document.getElementById('c-az'),barCfg(mon,[
+      {label:'매출',data:sales,backgroundColor:'#e0392b'},
+      {label:'광고비',data:spend,backgroundColor:'#111827'}])));
+  }
+});
+
+PAGES['sp-ads']=()=>({html:`
+  <div class="page-head"><h1>SP 광고 (Sponsored Products)</h1><p>키워드 단위 검색 광고 성과</p></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    ${kpi('광고 매출','$72,400','11.2%',true)}
+    ${kpi('광고비','$21,100','4.0%',false)}
+    ${kpi('ACOS','29.1%','2.1%',true)}
+    ${kpi('CTR','0.48%','0.05%',true)}
+  </div>
+  <div class="card" style="margin-bottom:16px"><h3>ACOS / 매출 추이</h3><div class="csub">일별</div>
+    <div class="chart-wrap"><canvas id="c-sp"></canvas></div></div>
+  <div class="card"><h3>키워드 성과</h3><div class="csub">검색어 기준 Top</div>
+    <table><thead><tr><th>키워드</th><th>매치</th><th class="num">노출</th><th class="num">클릭</th><th class="num">CPC</th><th class="num">ACOS</th><th>액션</th></tr></thead><tbody>
+      <tr><td>kimchi</td><td><span class="tag b">Broad</span></td><td class="num">182,400</td><td class="num">910</td><td class="num">$0.92</td><td class="num">21%</td><td><span class="tag g">입찰↑</span></td></tr>
+      <tr><td>vegan kimchi</td><td><span class="tag b">Phrase</span></td><td class="num">64,200</td><td class="num">540</td><td class="num">$1.10</td><td class="num">18%</td><td><span class="tag g">입찰↑</span></td></tr>
+      <tr><td>korean food</td><td><span class="tag a">Broad</span></td><td class="num">98,700</td><td class="num">320</td><td class="num">$1.34</td><td class="num">44%</td><td><span class="tag r">입찰↓</span></td></tr>
+      <tr><td>kimchi jar</td><td><span class="tag v">Exact</span></td><td class="num">22,100</td><td class="num">410</td><td class="num">$0.78</td><td class="num">12%</td><td><span class="tag g">유지</span></td></tr>
+      <tr><td>fermented food</td><td><span class="tag a">Broad</span></td><td class="num">41,300</td><td class="num">150</td><td class="num">$1.52</td><td class="num">61%</td><td><span class="tag r">제외검토</span></td></tr>
+    </tbody></table></div>`,
+  init(){charts.push(new Chart(document.getElementById('c-sp'),lineCfg(days,[
+    {label:'광고매출',data:series(1800,3600),borderColor:'#e0392b',backgroundColor:'rgba(224,57,43,.08)',fill:true},
+    {label:'ACOS%',data:series(20,40),borderColor:'#d97706',fill:false}])));}
+});
+
+PAGES['sd-ads']=()=>({html:`
+  <div class="page-head"><h1>SD 광고 (Sponsored Display)</h1><p>디스플레이 / 리타게팅 캠페인</p></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    ${kpi('광고 매출','$28,900','7.5%',true)}
+    ${kpi('광고비','$9,800','5.2%',false)}
+    ${kpi('ACOS','33.9%','1.9%',false)}
+    ${kpi('신규고객 비율','46%','3.0%',true)}
+  </div>
+  <div class="grid cols-2" style="margin-bottom:16px">
+    <div class="card"><h3>타겟팅 유형별 매출</h3><div class="csub">최근 30일</div>
+      <div class="chart-wrap"><canvas id="c-sd"></canvas></div></div>
+    <div class="card"><h3>오디언스 성과</h3><div class="csub">전환 기여</div>
+      <div class="list-row"><span style="flex:0 0 160px">리타게팅 (뷰)</span><div class="bar"><span style="width:82%"></span></div><b>3.8x</b></div>
+      <div class="list-row"><span style="flex:0 0 160px">유사 상품 타겟</span><div class="bar"><span style="width:64%"></span></div><b>2.9x</b></div>
+      <div class="list-row"><span style="flex:0 0 160px">카테고리 타겟</span><div class="bar"><span style="width:48%;background:#d97706"></span></div><b>2.1x</b></div>
+      <div class="list-row"><span style="flex:0 0 160px">관심사 인아웃</span><div class="bar"><span style="width:35%;background:#dc2626"></span></div><b>1.5x</b></div>
+    </div>
+  </div>`,
+  init(){charts.push(new Chart(document.getElementById('c-sd'),barCfg(['리타게팅','유사상품','카테고리','관심사'],[
+    {label:'매출',data:[13200,8400,4900,2400],backgroundColor:['#e0392b','#ef6256','#f08b82','#f6b8b2']}]))); }
+});
+
+PAGES['tiktok-ads']=()=>({html:`
+  <div class="page-head"><h1>TikTok Ads</h1><p>틱톡 퍼포먼스 캠페인 · Spark / In-feed</p></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    ${kpi('광고 매출','$54,200','18.3%',true)}
+    ${kpi('광고비','$17,300','9.1%',false)}
+    ${kpi('ROAS','3.13x','6.5%',true)}
+    ${kpi('CPM','$8.40','0.6%',true)}
+  </div>
+  <div class="grid cols-2" style="margin-bottom:16px">
+    <div class="card"><h3>지출 & ROAS 추이</h3><div class="csub">일별</div>
+      <div class="chart-wrap"><canvas id="c-tt"></canvas></div></div>
+    <div class="card"><h3>퍼널</h3><div class="csub">최근 30일</div>
+      <div class="list-row"><span style="flex:0 0 110px">노출</span><div class="bar"><span style="width:100%"></span></div><b>2.1M</b></div>
+      <div class="list-row"><span style="flex:0 0 110px">클릭</span><div class="bar"><span style="width:42%"></span></div><b>88K</b></div>
+      <div class="list-row"><span style="flex:0 0 110px">장바구니</span><div class="bar"><span style="width:14%;background:#d97706"></span></div><b>9.2K</b></div>
+      <div class="list-row"><span style="flex:0 0 110px">구매</span><div class="bar"><span style="width:5%;background:#16a34a"></span></div><b>3.1K</b></div>
+    </div>
+  </div>
+  <div class="card"><h3>캠페인별</h3>
+    <table><thead><tr><th>캠페인</th><th>목표</th><th class="num">지출</th><th class="num">ROAS</th><th class="num">CTR</th><th>상태</th></tr></thead><tbody>
+      <tr><td>US_Conversion_Kimchi</td><td><span class="tag b">전환</span></td><td class="num">$7,200</td><td class="num">3.8x</td><td class="num">1.9%</td><td><span class="tag g">활성</span></td></tr>
+      <tr><td>US_Spark_Creator</td><td><span class="tag v">트래픽</span></td><td class="num">$4,900</td><td class="num">2.9x</td><td class="num">2.4%</td><td><span class="tag g">활성</span></td></tr>
+      <tr><td>US_Retarget_Cart</td><td><span class="tag b">전환</span></td><td class="num">$3,100</td><td class="num">4.6x</td><td class="num">1.2%</td><td><span class="tag g">활성</span></td></tr>
+      <tr><td>US_Awareness_Vegan</td><td><span class="tag a">인지</span></td><td class="num">$2,100</td><td class="num">1.4x</td><td class="num">0.8%</td><td><span class="tag r">검토</span></td></tr>
+    </tbody></table></div>`,
+  init(){charts.push(new Chart(document.getElementById('c-tt'),lineCfg(days,[
+    {label:'지출',data:series(400,900),borderColor:'#111827',backgroundColor:'rgba(17,24,39,.06)',fill:true},
+    {label:'ROAS',data:series(2,5),borderColor:'#e0392b',fill:false}])));}
+});
+
+PAGES['meta-ads']=()=>({html:`
+  <div class="page-head"><h1>Meta Ads <span id="meta-badge" class="tag a" style="vertical-align:middle">불러오는 중…</span></h1><p>페이스북 · 인스타그램 광고 실시간 성과</p></div>
+  <div class="grid kpis" style="margin-bottom:16px" id="meta-kpis">
+    ${kpi('광고 매출','—','—',true)}
+    ${kpi('광고비','—','—',true)}
+    ${kpi('ROAS','—','—',true)}
+    ${kpi('구매수','—','—',true)}
+  </div>
+  <div class="card" style="margin-bottom:16px"><h3>지출 & ROAS 추이</h3><div class="csub">일별 · 최근 14일</div>
+    <div class="chart-wrap"><canvas id="c-meta"></canvas></div></div>
+  <div class="card"><h3>캠페인별</h3><div class="csub" id="meta-src">데이터 소스 확인 중</div>
+    <table><thead><tr><th>캠페인</th><th>목표</th><th class="num">지출</th><th class="num">ROAS</th><th class="num">CTR</th><th>상태</th></tr></thead>
+    <tbody id="meta-rows"><tr><td colspan="6">불러오는 중…</td></tr></tbody></table></div>`,
+  async init(){
+    const d=await liveFetch('/api/meta');
+    const badge=document.getElementById('meta-badge');
+    if(badge){badge.outerHTML=liveBadge(d);}
+    const data=d||{demo:true,summary:{spend:17300,revenue:54200,roas:3.13,purchases:3100},
+      daily:Array.from({length:14},(_,i)=>({date:'6/'+(15+i),spend:rnd(400,900),roas:+(2+Math.random()*3).toFixed(2)})),
+      campaigns:[{name:'US_Conversion_Kimchi',objective:'전환',spend:7200,roas:3.8,ctr:1.9,status:'활성'}]};
+    const s=data.summary;
+    document.getElementById('meta-kpis').innerHTML=
+      kpi('광고 매출','$'+fmt(s.revenue),'',true)+kpi('광고비','$'+fmt(s.spend),'',true)+
+      kpi('ROAS',s.roas+'x','',true)+kpi('구매수',fmt(s.purchases||0),'',true);
+    document.getElementById('meta-src').textContent=data.demo?('데모 데이터 · '+(data.reason||'')):'실시간 · Meta Marketing API';
+    document.getElementById('meta-rows').innerHTML=(data.campaigns||[]).map(c=>
+      `<tr><td>${c.name}</td><td><span class="tag b">${c.objective}</span></td><td class="num">$${fmt(c.spend)}</td><td class="num">${c.roas}x</td><td class="num">${c.ctr}%</td><td><span class="tag g">${c.status}</span></td></tr>`).join('')||'<tr><td colspan="6">캠페인 없음</td></tr>';
+    charts.push(new Chart(document.getElementById('c-meta'),lineCfg((data.daily||[]).map(x=>x.date),[
+      {label:'지출',data:(data.daily||[]).map(x=>x.spend),borderColor:'#1877f2',backgroundColor:'rgba(24,119,242,.08)',fill:true},
+      {label:'ROAS',data:(data.daily||[]).map(x=>x.roas),borderColor:'#e0392b',fill:false}])));
+  }
+});
+
+PAGES['tiktok-utm']=()=>({html:`
+  <div class="page-head"><h1>TikTok UTM</h1><p>UTM 파라미터 빌더 & 링크 추적</p></div>
+  <div class="card" style="margin-bottom:16px"><h3>UTM 빌더</h3><div class="csub">DTC 랜딩 추적 링크 생성</div>
+    <div class="input-line"><input value="https://kimchip.com/shop" /></div>
+    <div class="grid cols-3">
+      <div class="field"><label>utm_source</label><input value="tiktok" /></div>
+      <div class="field"><label>utm_medium</label><input value="paid_social" /></div>
+      <div class="field"><label>utm_campaign</label><input value="us_conversion_q2" /></div>
+    </div>
+    <div class="callout" style="margin-top:6px">https://kimchip.com/shop?utm_source=tiktok&utm_medium=paid_social&utm_campaign=us_conversion_q2</div>
+    <button class="btn-sm primary">링크 복사</button>
+  </div>
+  <div class="card"><h3>UTM 성과</h3><div class="csub">GA4 연동 · 캠페인별 세션/전환</div>
+    <table><thead><tr><th>Campaign</th><th>Medium</th><th class="num">세션</th><th class="num">전환</th><th class="num">매출</th></tr></thead><tbody>
+      <tr><td>us_conversion_q2</td><td>paid_social</td><td class="num">14,200</td><td class="num">820</td><td class="num">$28,400</td></tr>
+      <tr><td>creator_spark_jun</td><td>paid_social</td><td class="num">9,100</td><td class="num">410</td><td class="num">$13,900</td></tr>
+      <tr><td>organic_bio_link</td><td>social</td><td class="num">6,400</td><td class="num">290</td><td class="num">$9,800</td></tr>
+    </tbody></table></div>`,
+  init(){}
+});
+
+PAGES.creatives=()=>{
+  const cards=[
+    {t:'CR-0142 · Vegan Hook',roas:'3.8x',ctr:'2.4%',tag:'g',s:'활성'},
+    {t:'CR-0138 · Recipe ASMR',roas:'3.1x',ctr:'1.9%',tag:'g',s:'활성'},
+    {t:'CR-0129 · UGC Review',roas:'2.6x',ctr:'1.4%',tag:'a',s:'피로도↑'},
+    {t:'CR-0151 · Before/After',roas:'4.2x',ctr:'2.8%',tag:'b',s:'신규'},
+  ];
+  return {html:`
+    <div class="page-head"><h1>광고 소재</h1><p>크리에이티브 라이브러리 & 성과</p></div>
+    <div class="section-title"><h2>소재 갤러리</h2><button class="btn-sm primary">+ 소재 업로드</button></div>
+    <div class="gallery" style="margin-bottom:20px">
+      ${cards.map(c=>`<div><div class="media"><div class="play">▶</div><div class="meta"><b>${c.t.split('·')[1]}</b><br>ROAS ${c.roas} · CTR ${c.ctr}</div></div>
+        <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between"><span>${c.t.split('·')[0]}</span><span class="tag ${c.tag}">${c.s}</span></div></div>`).join("")}
+    </div>
+    <div class="card"><h3>소재 성과 순위</h3>
+      <table><thead><tr><th>소재 ID</th><th>유형</th><th class="num">노출</th><th class="num">CTR</th><th class="num">ROAS</th><th class="num">소진</th></tr></thead><tbody>
+        <tr><td>CR-0151</td><td><span class="tag b">Before/After</span></td><td class="num">412K</td><td class="num">2.8%</td><td class="num">4.2x</td><td class="num">$2,100</td></tr>
+        <tr><td>CR-0142</td><td><span class="tag v">Hook</span></td><td class="num">680K</td><td class="num">2.4%</td><td class="num">3.8x</td><td class="num">$3,400</td></tr>
+        <tr><td>CR-0138</td><td><span class="tag a">ASMR</span></td><td class="num">520K</td><td class="num">1.9%</td><td class="num">3.1x</td><td class="num">$2,800</td></tr>
+        <tr><td>CR-0129</td><td><span class="tag g">UGC</span></td><td class="num">390K</td><td class="num">1.4%</td><td class="num">2.6x</td><td class="num">$1,900</td></tr>
+      </tbody></table></div>`,init(){}};
+};
+
+PAGES.competitors=()=>({html:`
+  <div class="page-head"><h1>경쟁사</h1><p>주요 경쟁 브랜드 모니터링</p></div>
+  <div class="grid cols-3" style="margin-bottom:16px">
+    <div class="card"><h3>Mother In Law's</h3><div class="csub">aka MIL Kimchi</div>
+      <div class="list-row"><span style="flex:1">가격 (16oz)</span><b>$11.99</b></div>
+      <div class="list-row"><span style="flex:1">리뷰수</span><b>8,420</b></div>
+      <div class="list-row"><span style="flex:1">평점</span><b>4.5★</b></div>
+      <div class="chips"><span class="chip">신제품 런칭</span><span class="chip">가격인하</span></div></div>
+    <div class="card"><h3>Cleveland Kitchen</h3><div class="csub">Fermented</div>
+      <div class="list-row"><span style="flex:1">가격 (16oz)</span><b>$9.49</b></div>
+      <div class="list-row"><span style="flex:1">리뷰수</span><b>5,210</b></div>
+      <div class="list-row"><span style="flex:1">평점</span><b>4.3★</b></div>
+      <div class="chips"><span class="chip">쿠폰 적극</span></div></div>
+    <div class="card"><h3>Wildbrine</h3><div class="csub">Plant-based</div>
+      <div class="list-row"><span style="flex:1">가격 (18oz)</span><b>$8.99</b></div>
+      <div class="list-row"><span style="flex:1">리뷰수</span><b>3,880</b></div>
+      <div class="list-row"><span style="flex:1">평점</span><b>4.2★</b></div>
+      <div class="chips"><span class="chip">유통 확장</span></div></div>
+  </div>
+  <div class="card"><h3>가격 & 리뷰 추이</h3><div class="csub">우리 vs 경쟁사 · 평점</div>
+    <div class="chart-wrap"><canvas id="c-comp"></canvas></div></div>`,
+  init(){const ch=new Chart(document.getElementById('c-comp'),lineCfg(months,[
+    {label:'KIMCHIP',data:[4.2,4.3,4.3,4.4,4.4,4.4],borderColor:'#e0392b'},
+    {label:'MIL',data:[4.5,4.5,4.5,4.5,4.5,4.5],borderColor:'#111827'},
+    {label:'Cleveland',data:[4.2,4.2,4.3,4.3,4.3,4.3],borderColor:'#d97706'}]));
+    ch.options.scales.y.beginAtZero=false;ch.update();charts.push(ch);}
+});
+
+PAGES.lmf=()=>({html:`
+  <div class="page-head"><h1>LMF · Listing Market Fit</h1><p>리스팅 최적화 점수 & 시장 적합도</p></div>
+  <div class="grid cols-3" style="margin-bottom:16px">
+    <div class="card" style="text-align:center"><div class="csub">종합 LMF 점수</div><div class="score" style="color:#16a34a">82</div><span class="tag g">양호</span></div>
+    <div class="card" style="text-align:center"><div class="csub">검색 가시성</div><div class="score">76</div><span class="tag a">개선여지</span></div>
+    <div class="card" style="text-align:center"><div class="csub">전환 요소</div><div class="score" style="color:#16a34a">88</div><span class="tag g">우수</span></div>
+  </div>
+  <div class="card"><h3>리스팅 요소 진단</h3>
+    <div class="check"><span class="mk ok">✓</span><div><b>타이틀</b> — 핵심 키워드 포함, 200자 활용 95%</div></div>
+    <div class="check"><span class="mk ok">✓</span><div><b>메인 이미지</b> — 화이트 배경, 1600px+ 충족</div></div>
+    <div class="check"><span class="mk warn">!</span><div><b>A+ 콘텐츠</b> — 모듈 5/7 사용, 비교표 추가 권장</div></div>
+    <div class="check"><span class="mk warn">!</span><div><b>백엔드 키워드</b> — 249/250 byte 중복어 발견</div></div>
+    <div class="check"><span class="mk no">✕</span><div><b>동영상</b> — 미등록, 추가 시 CVR +1.8%p 기대</div></div>
+    <div class="check"><span class="mk ok">✓</span><div><b>리뷰</b> — 4.4★ / 1,240개, 신뢰도 충분</div></div>
+  </div>`,init(){}
+});
+
+PAGES.outreach=()=>({html:`
+  <div class="page-head"><h1>아웃리치</h1><p>인플루언서 / 크리에이터 협업 파이프라인</p></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    ${kpi('컨택 (이번달)','64','22%',true)}
+    ${kpi('응답률','38%','4%',true)}
+    ${kpi('계약 성사','9','3건',true)}
+    ${kpi('평균 단가','$420','5%',false)}
+  </div>
+  <div class="card"><h3>파이프라인</h3>
+    <table><thead><tr><th>크리에이터</th><th>플랫폼</th><th class="num">팔로워</th><th>단계</th><th class="num">예상단가</th></tr></thead><tbody>
+      <tr><td>@seoul.eats</td><td><span class="tag v">TikTok</span></td><td class="num">412K</td><td><span class="tag g">계약완료</span></td><td class="num">$650</td></tr>
+      <tr><td>@vegan.mara</td><td><span class="tag v">TikTok</span></td><td class="num">238K</td><td><span class="tag b">협상중</span></td><td class="num">$400</td></tr>
+      <tr><td>@koreanfoodie</td><td><span class="tag a">IG</span></td><td class="num">180K</td><td><span class="tag a">응답대기</span></td><td class="num">$350</td></tr>
+      <tr><td>@healthy.bites</td><td><span class="tag v">TikTok</span></td><td class="num">96K</td><td><span class="tag b">협상중</span></td><td class="num">$220</td></tr>
+      <tr><td>@fermentfan</td><td><span class="tag a">IG</span></td><td class="num">54K</td><td><span class="tag r">미응답</span></td><td class="num">$150</td></tr>
+    </tbody></table></div>`,init(){}
+});
+
+PAGES['reel-checker']=()=>({html:`
+  <div class="page-head"><h1>릴스 체커</h1><p>업로드 전 릴스/숏폼 사전 점검 도구</p></div>
+  <div class="card" style="margin-bottom:16px"><h3>영상 URL 분석</h3>
+    <div class="input-line"><input placeholder="TikTok / Reels URL 붙여넣기..." value="https://tiktok.com/@kimchip/video/..." /><button class="btn-sm primary">분석</button></div>
+  </div>
+  <div class="grid cols-2">
+    <div class="card" style="text-align:center"><div class="csub">예상 바이럴 점수</div><div class="score" style="color:#d97706">71</div><span class="tag a">보통 — 훅 보강 추천</span></div>
+    <div class="card"><h3>체크리스트</h3>
+      <div class="check"><span class="mk ok">✓</span><div>첫 3초 훅 존재 (텍스트 오버레이)</div></div>
+      <div class="check"><span class="mk ok">✓</span><div>자막 / 캡션 포함</div></div>
+      <div class="check"><span class="mk warn">!</span><div>CTA 명확성 부족 — 마지막 화면 추가</div></div>
+      <div class="check"><span class="mk no">✕</span><div>트렌딩 사운드 미사용</div></div>
+      <div class="check"><span class="mk ok">✓</span><div>영상 길이 21초 (권장 15~34초)</div></div>
+      <div class="check"><span class="mk ok">✓</span><div>9:16 세로 비율</div></div>
+    </div>
+  </div>`,init(){}
+});
+
+PAGES['signal-planner']=()=>({html:`
+  <div class="page-head"><h1>시그널플래너</h1><p>시장 시그널 기반 주간 액션 플래너</p></div>
+  <div class="grid cols-3" style="margin-bottom:16px">
+    <div class="card"><h3 style="color:#dc2626">🔴 긴급 시그널</h3>
+      <div class="list-row">SP "Kimchi Snack" ACOS 42%</div>
+      <div class="list-row">KMC-003 재고 27일분</div></div>
+    <div class="card"><h3 style="color:#d97706">🟡 기회 시그널</h3>
+      <div class="list-row">"vegan kimchi" 검색 +38%</div>
+      <div class="list-row">CR-0151 소재 ROAS 4.2x</div></div>
+    <div class="card"><h3 style="color:#2563eb">🔵 모니터링</h3>
+      <div class="list-row">경쟁사 신제품 런칭</div>
+      <div class="list-row">TikTok CPM 상승 추세</div></div>
+  </div>
+  <div class="card"><h3>이번 주 액션 플랜</h3>
+    <div class="step"><div class="n">1</div><div><b>SP 캠페인 입찰 조정</b> — "fermented food" 키워드 제외, "vegan kimchi" 입찰 +15%<div class="chips"><span class="chip">담당 winter.a</span><span class="chip">월요일</span></div></div></div>
+    <div class="step"><div class="n">2</div><div><b>KMC-003 재고 보충 요청</b> — FBA 입고 계획 수립<div class="chips"><span class="chip">담당 ops</span><span class="chip">화요일</span></div></div></div>
+    <div class="step"><div class="n">3</div><div><b>CR-0151 예산 증액</b> — TikTok 전환 캠페인 일예산 +30%<div class="chips"><span class="chip">담당 winter.a</span><span class="chip">수요일</span></div></div></div>
+    <div class="step"><div class="n">4</div><div><b>vegan 키워드 신규 소재 기획</b> — 검색량 급증 대응<div class="chips"><span class="chip">담당 creative</span><span class="chip">금요일</span></div></div></div>
+  </div>`,init(){}
+});
+
+PAGES.playbook=()=>({html:`
+  <div class="page-head"><h1>전략 가이드</h1><p>KIMCHIP US 런칭 플레이북</p></div>
+  <div class="card doc">
+    <div class="callout"><b>핵심 전략</b> — 미국 시장에서 "건강한 발효식품 × 비건 친화" 포지셔닝으로 Amazon과 TikTok을 양대 축으로 동시 공략한다.</div>
+    <h4>1. 포지셔닝</h4>
+    <p>주류 식료품이 아닌 <b>건강·웰니스 카테고리</b>로 진입. 글루텐프리, 비건, 프로바이오틱을 전면에 내세운다.</p>
+    <ul><li>1차 타겟: 25~40세 건강 관심 도시 거주자</li><li>2차 타겟: 한식/아시안 푸드 애호가</li></ul>
+    <h4>2. 채널 전략</h4>
+    <p><b>Amazon</b>은 전환·매출의 엔진, <b>TikTok</b>은 신규 수요 창출의 엔진으로 역할 분담. TikTok에서 만든 인지를 Amazon 검색 수요로 전환시키는 풀-스루 구조.</p>
+    <h4>3. 단계별 로드맵</h4>
+    <div class="step"><div class="n">P1</div><div><b>런칭 (0~3개월)</b> — 리스팅 최적화, 초기 리뷰 확보, SP 방어 캠페인</div></div>
+    <div class="step"><div class="n">P2</div><div><b>성장 (3~6개월)</b> — TikTok 크리에이터 확장, SD 리타게팅, 키워드 확장</div></div>
+    <div class="step"><div class="n">P3</div><div><b>확장 (6~12개월)</b> — SKU 라인업 확대, DTC 강화, 리테일 입점 타진</div></div>
+  </div>`,init(){}
+});
+
+PAGES.sop=()=>({html:`
+  <div class="page-head"><h1>SOP · 운영 표준 절차</h1><p>반복 업무 표준화 문서</p></div>
+  <div class="grid cols-2">
+    <div class="card doc"><h3>📋 주간 광고 리포팅</h3>
+      <div class="step"><div class="n">1</div><div>월요일 오전, 전주 데이터 추출 (Amazon + TikTok)</div></div>
+      <div class="step"><div class="n">2</div><div>ACOS/ROAS 임계치 초과 캠페인 플래그</div></div>
+      <div class="step"><div class="n">3</div><div>시그널플래너에 액션 등록</div></div>
+      <div class="step"><div class="n">4</div><div>클라이언트 리포트 발송 (화요일)</div></div>
+    </div>
+    <div class="card doc"><h3>🎬 신규 소재 런칭</h3>
+      <div class="step"><div class="n">1</div><div>릴스 체커로 사전 점검 (70점 이상)</div></div>
+      <div class="step"><div class="n">2</div><div>네이밍 규칙 CR-XXXX 부여</div></div>
+      <div class="step"><div class="n">3</div><div>테스트 예산 $50/일로 3일 운영</div></div>
+      <div class="step"><div class="n">4</div><div>CTR 1.5% 이상 시 본 캠페인 편입</div></div>
+    </div>
+  </div>`,init(){}
+});
+
+PAGES.learnings=()=>({html:`
+  <div class="page-head"><h1>학습 기록</h1><p>실험 & 인사이트 로그</p></div>
+  <div class="card doc">
+    <div class="step"><div class="n">✓</div><div><b>2026-06-20 · 비건 훅 소재 승</b><br>"Is your kimchi actually vegan?" 훅이 일반 제품 소개 대비 CTR 1.6배. 의문형 훅이 효과적.<div class="chips"><span class="chip">TikTok</span><span class="chip">크리에이티브</span></div></div></div>
+    <div class="step"><div class="n">✓</div><div><b>2026-06-12 · SP 광범위 키워드 정리</b><br>"korean food" 광범위 매치 ACOS 44%로 비효율. 제외 후 전체 ACOS 3%p 개선.<div class="chips"><span class="chip">Amazon</span><span class="chip">SP</span></div></div></div>
+    <div class="step"><div class="n">✗</div><div><b>2026-06-05 · 인지 캠페인 실패</b><br>TikTok 인지 목표 캠페인 ROAS 1.4x로 부진. 전환 목표가 현 단계엔 적합.<div class="chips"><span class="chip">TikTok</span><span class="chip">실패</span></div></div></div>
+    <div class="step"><div class="n">✓</div><div><b>2026-05-28 · A+ 비교표 효과</b><br>리스팅에 경쟁 비교표 추가 후 CVR 0.9%p 상승.<div class="chips"><span class="chip">LMF</span><span class="chip">리스팅</span></div></div></div>
+  </div>`,init(){}
+});
+
+PAGES['amazon-guide']=()=>({html:`
+  <div class="page-head"><h1>광고 가이드</h1><p>아마존 광고 운영 레퍼런스</p></div>
+  <div class="card doc">
+    <h4>ACOS / TACOS 기준</h4>
+    <ul><li><b>목표 ACOS</b>: 신제품 35% 이하, 안정 제품 25% 이하</li><li><b>TACOS</b>: 15~20% 유지 (브랜드 성장 단계)</li></ul>
+    <h4>캠페인 구조 권장</h4>
+    <p>제품군별로 <b>Auto → Exact → Broad/Phrase</b> 3단 구조. Auto에서 검색어를 발굴하고 성과 키워드를 Exact로 승격.</p>
+    <h4>입찰 전략</h4>
+    <ul><li>전환율 높은 키워드: Top of Search 강화</li><li>ACOS 임계 초과: 입찰 -15%씩 단계 조정</li><li>신규 키워드: 동적 입찰(하향만)로 시작</li></ul>
+    <div class="callout">매주 검색어 리포트(STR)를 확인해 신규 기회 키워드와 제외 키워드를 동시에 관리하세요.</div>
+  </div>`,init(){}
+});
+
+PAGES.clients=()=>({html:`
+  <div class="page-head"><h1>cosduck <span class="tag b" style="vertical-align:middle">대행 클라이언트</span></h1><p>코스덕 · 위탁 운영 성과</p></div>
+  <div class="grid kpis" style="margin-bottom:16px">
+    ${kpi('총 매출','$96,400','14.0%',true)}
+    ${kpi('광고비','$31,200','6.0%',false)}
+    ${kpi('ROAS','3.09x','7.5%',true)}
+    ${kpi('순이익률','22%','1.5%',true)}
+  </div>
+  <div class="grid cols-2">
+    <div class="card"><h3>월별 매출</h3><div class="csub">대행 운영 시작 이후</div>
+      <div class="chart-wrap"><canvas id="c-cd"></canvas></div></div>
+    <div class="card"><h3>채널 분포</h3><div class="csub">매출 비중</div>
+      <div class="chart-wrap"><canvas id="c-cd2"></canvas></div></div>
+  </div>`,
+  init(){charts.push(new Chart(document.getElementById('c-cd'),barCfg(months,[{label:'매출',data:[10,12,13,15,16,18].map(x=>x*1000),backgroundColor:'#e0392b'}])));
+    charts.push(new Chart(document.getElementById('c-cd2'),doughCfg(['Amazon','TikTok','DTC'],[52,31,17],['#e0392b','#111827','#d97706'])));}
+});
+
+/* ---------------- ROUTER ---------------- */
+function route(){
+  let id=(location.hash.replace('#/','')||'dashboard');
+  if(!PAGES[id])id='dashboard';
+  clearCharts();
+  const page=PAGES[id]();
+  document.getElementById('content').innerHTML=page.html;
+  document.getElementById('topTitle').textContent=TITLES[id].name;
+  document.getElementById('topCrumb').textContent=TITLES[id].group;
+  document.querySelectorAll('.nav-item').forEach(a=>a.classList.toggle('active',a.dataset.id===id));
+  window.scrollTo(0,0);
+  if(page.init)setTimeout(()=>{try{page.init();}catch(e){console.warn(e);}},0);
+}
+window.addEventListener('hashchange',route);
+buildNav();
+</script>
+</body>
+</html>
